@@ -37,6 +37,13 @@ SECTIONS
 
     . = ALIGN(4K);
 
+    /* Limine requests section - required for bootloader protocol */
+    .requests : {
+        KEEP(*(.requests))
+    } :data
+
+    . = ALIGN(4K);
+
     .bss : {
         *(COMMON)
         *(.bss .bss.*)
