@@ -1,8 +1,11 @@
 #ifndef STDDEF_H
 #define STDDEF_H
 
-typedef unsigned long size_t;
-typedef long ssize_t;
+#ifndef _SIZE_T_DEFINED
+#define _SIZE_T_DEFINED
+typedef unsigned long long size_t;
+typedef long long ssize_t;
+#endif
 
 #define NULL ((void *)0)
 

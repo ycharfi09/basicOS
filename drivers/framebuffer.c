@@ -121,10 +121,11 @@ void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint3
 
 /* Draw a character */
 void fb_draw_char(uint32_t x, uint32_t y, char c, uint32_t color) {
-    if (c < 0 || c >= 128) c = ' ';
+    unsigned char uc = (unsigned char)c;
+    if (uc >= 128) uc = ' ';
     
     for (int row = 0; row < 8; row++) {
-        uint8_t line = font_8x8[(int)c][row];
+        uint8_t line = font_8x8[uc][row];
         for (int col = 0; col < 8; col++) {
             if (line & (0x80 >> col)) {
                 fb_putpixel(x + col, y + row, color);

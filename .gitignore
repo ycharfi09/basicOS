@@ -1,0 +1,17 @@
+# Build artifacts
+build/
+*.o
+*.elf
+*.iso
+
+# Limine bootloader
+limine/
+
+# Editor backups
+*~
+*.swp
+*.swo
+
+# OS-specific
+.DS_Store
+Thumbs.db

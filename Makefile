@@ -95,9 +95,9 @@ $(ISO_FILE): $(KERNEL_BIN) download-limine $(LIMINE_CFG)
 	@cp $(KERNEL_BIN) $(BUILD_DIR)/iso_root/
 	@mkdir -p $(BUILD_DIR)/iso_root/boot
 	@cp $(LIMINE_CFG) $(BUILD_DIR)/iso_root/boot/
-	@cp $(LIMINE_DIR)/limine.sys $(BUILD_DIR)/iso_root/boot/
-	@cp $(LIMINE_DIR)/limine-cd.bin $(BUILD_DIR)/iso_root/boot/
-	@cp $(LIMINE_DIR)/limine-cd-efi.bin $(BUILD_DIR)/iso_root/boot/
+	@cp $(LIMINE_DIR)/limine-bios.sys $(BUILD_DIR)/iso_root/boot/limine.sys
+	@cp $(LIMINE_DIR)/limine-bios-cd.bin $(BUILD_DIR)/iso_root/boot/limine-cd.bin
+	@cp $(LIMINE_DIR)/limine-uefi-cd.bin $(BUILD_DIR)/iso_root/boot/limine-cd-efi.bin
 	@mkdir -p $(BUILD_DIR)/iso_root/EFI/BOOT
 	@cp $(LIMINE_DIR)/BOOTX64.EFI $(BUILD_DIR)/iso_root/EFI/BOOT/
 	@xorriso -as mkisofs -b boot/limine-cd.bin \
@@ -105,7 +105,7 @@ $(ISO_FILE): $(KERNEL_BIN) download-limine $(LIMINE_CFG)
 		--efi-boot boot/limine-cd-efi.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
 		$(BUILD_DIR)/iso_root -o $(ISO_FILE) 2>/dev/null
-	@$(LIMINE_DIR)/limine-deploy $(ISO_FILE) 2>/dev/null
+	@$(LIMINE_DIR)/limine bios-install $(ISO_FILE) 2>/dev/null
 	@echo "ISO created: $(ISO_FILE)"
 
 # Run in QEMU (BIOS mode)
