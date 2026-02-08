@@ -1,0 +1,16 @@
+#ifndef MEMORY_H
+#define MEMORY_H
+
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+
+/* Memory management */
+void memory_init(void);
+void *kmalloc(size_t size);
+void kfree(void *ptr);
+void *memset(void *s, int c, size_t n);
+void *memcpy(void *dest, const void *src, size_t n);
+int memcmp(const void *s1, const void *s2, size_t n);
+
+#endif /* MEMORY_H */
