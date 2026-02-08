@@ -7,6 +7,15 @@
 #define EDITOR_MAX_TEXT 4096
 #define EDITOR_LINE_HEIGHT 12
 
+/* Control key codes */
+#define KEY_CTRL_A  1   /* Home / start of line */
+#define KEY_CTRL_B  2   /* Left arrow */
+#define KEY_CTRL_E  5   /* End of line */
+#define KEY_CTRL_F  6   /* Right arrow */
+#define KEY_CTRL_O  15  /* Down arrow / next line */
+#define KEY_CTRL_P  16  /* Up arrow / prev line */
+#define KEY_DELETE   127 /* Delete key */
+
 typedef struct {
     char text[EDITOR_MAX_TEXT];
     int length;
@@ -79,11 +88,15 @@ static void editor_render(window_t *win) {
     /* Draw line numbers for visible lines */
     int total_lines = editor_count_lines(data->text, data->length) + 1;
     for (int l = 0; l < visible_lines && (l + data->scroll_y) < total_lines; l++) {
-        char num[4];
+        char num[8];
         int n = l + data->scroll_y + 1;
-        num[0] = (n / 10) ? ('0' + (n / 10) % 10) : ' ';
-        num[1] = '0' + n % 10;
-        num[2] = '\0';
+        int ni = 0;
+        char tmp[8];
+        int ti = 0;
+        if (n == 0) { tmp[ti++] = '0'; }
+        else { while (n > 0) { tmp[ti++] = '0' + n % 10; n /= 10; } }
+        while (ti > 0) num[ni++] = tmp[--ti];
+        num[ni] = '\0';
         fb_draw_string(content_x, content_y + l * EDITOR_LINE_HEIGHT, num, COLOR_GRAY);
     }
 
@@ -136,7 +149,7 @@ static void editor_on_key(window_t *win, char key) {
             data->text[data->length] = '\0';
             data->modified = true;
         }
-    } else if (key == 127) {
+    } else if (key == KEY_DELETE) {
         /* Delete key: delete character at cursor */
         if (data->cursor < data->length) {
             for (int i = data->cursor; i < data->length - 1; i++) {
@@ -146,14 +159,14 @@ static void editor_on_key(window_t *win, char key) {
             data->text[data->length] = '\0';
             data->modified = true;
         }
-    } else if (key == 2) {
-        /* Ctrl+B or left arrow: move cursor left */
+    } else if (key == KEY_CTRL_B) {
+        /* Left arrow: move cursor left */
         if (data->cursor > 0) data->cursor--;
-    } else if (key == 6) {
-        /* Ctrl+F or right arrow: move cursor right */
+    } else if (key == KEY_CTRL_F) {
+        /* Right arrow: move cursor right */
         if (data->cursor < data->length) data->cursor++;
-    } else if (key == 16) {
-        /* Ctrl+P: move cursor up one line */
+    } else if (key == KEY_CTRL_P) {
+        /* Up: move cursor up one line */
         int col = editor_get_col(data->text, data->cursor);
         /* Find start of current line */
         int pos = data->cursor;
@@ -166,8 +179,8 @@ static void editor_on_key(window_t *win, char key) {
             int prev_len = pos - prev_start;
             data->cursor = prev_start + (col < prev_len ? col : prev_len);
         }
-    } else if (key == 15) {
-        /* Ctrl+O: move cursor down one line */
+    } else if (key == KEY_CTRL_O) {
+        /* Down: move cursor down one line */
         int col = editor_get_col(data->text, data->cursor);
         /* Find end of current line */
         int pos = data->cursor;
@@ -180,13 +193,13 @@ static void editor_on_key(window_t *win, char key) {
             int next_len = next_end - pos;
             data->cursor = pos + (col < next_len ? col : next_len);
         }
-    } else if (key == 1) {
-        /* Ctrl+A: move to start of line */
+    } else if (key == KEY_CTRL_A) {
+        /* Home: move to start of line */
         while (data->cursor > 0 && data->text[data->cursor - 1] != '\n') {
             data->cursor--;
         }
-    } else if (key == 5) {
-        /* Ctrl+E: move to end of line */
+    } else if (key == KEY_CTRL_E) {
+        /* End: move to end of line */
         while (data->cursor < data->length && data->text[data->cursor] != '\n') {
             data->cursor++;
         }

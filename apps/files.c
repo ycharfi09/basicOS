@@ -7,6 +7,10 @@
 /* File manager data */
 #define FM_MAX_ENTRIES 32
 
+/* Navigation key codes */
+#define FM_KEY_UP    16  /* Ctrl+P / Up arrow */
+#define FM_KEY_DOWN  15  /* Ctrl+O / Down arrow */
+
 typedef struct {
     char cwd[256];
     vfs_dirent_t entries[FM_MAX_ENTRIES];
@@ -126,10 +130,10 @@ static void files_on_key(window_t *win, char key) {
     files_data_t *data = (files_data_t *)win->data;
     (void)win;
 
-    if (key == 16) {
+    if (key == FM_KEY_UP) {
         /* Up */
         if (data->selected > 0) data->selected--;
-    } else if (key == 15) {
+    } else if (key == FM_KEY_DOWN) {
         /* Down */
         if (data->selected < data->entry_count - 1) data->selected++;
     } else if (key == '\n') {

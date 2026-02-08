@@ -9,6 +9,10 @@
 #define MAX_LINE_LEN 80
 #define MAX_CMD_LEN 64
 
+/* Key codes for control keys */
+#define KEY_CTRL_D  4   /* Scroll down / Page Down */
+#define KEY_CTRL_N  14  /* Scroll up / Page Up */
+
 typedef struct {
     char lines[TERM_BUFFER_LINES][MAX_LINE_LEN];
     int line_count;
@@ -234,13 +238,15 @@ static void terminal_on_key(window_t *win, char key) {
             data->cmd_pos--;
             data->current_cmd[data->cmd_pos] = '\0';
         }
-    } else if (key == 14) {
-        /* Page Up (Ctrl+N or custom scancode) - scroll back */
-        if (data->scroll_offset < data->line_count - 1) {
-            data->scroll_offset += 3;
-        }
-    } else if (key == 4) {
-        /* Page Down (Ctrl+D or custom scancode) - scroll forward */
+    } else if (key == KEY_CTRL_N) {
+        /* Page Up - scroll back */
+        int visible_lines = (win->height - 80) / 16;
+        int max_offset = data->line_count - visible_lines;
+        if (max_offset < 0) max_offset = 0;
+        data->scroll_offset += 3;
+        if (data->scroll_offset > max_offset) data->scroll_offset = max_offset;
+    } else if (key == KEY_CTRL_D) {
+        /* Page Down - scroll forward */
         if (data->scroll_offset > 0) {
             data->scroll_offset -= 3;
             if (data->scroll_offset < 0) data->scroll_offset = 0;
