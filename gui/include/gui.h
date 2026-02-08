@@ -15,11 +15,22 @@ typedef enum {
 typedef struct window {
     int x, y;
     int width, height;
+    /* Saved position/size for restoring after focused mode */
+    int saved_x, saved_y;
+    int saved_width, saved_height;
     char title[64];
     uint32_t bg_color;
     window_mode_t mode;
     bool visible;
     bool focused;
+    /* Drag state */
+    bool dragging;
+    int drag_offset_x;
+    int drag_offset_y;
+    /* Z-order (higher = on top) */
+    int z_order;
+    /* Focused mode: require double-confirm to quit */
+    bool quit_confirm_pending;
     void (*render)(struct window *win);
     void (*update)(struct window *win);
     void (*on_key)(struct window *win, char key);
