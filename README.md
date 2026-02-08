@@ -1,31 +1,51 @@
 # BasicOS
 
-A minimal hobby operating system built from scratch with a custom kernel, drivers, and graphical desktop environment.
+A comprehensive operating system built from scratch with advanced kernel features, real filesystem support, and a full desktop environment.
 
 ## 🎯 Project Overview
 
-BasicOS is an educational operating system that demonstrates the full OS stack from bootloader to GUI applications. It's designed to run in QEMU or VirtualBox and showcase fundamental OS concepts.
+BasicOS is an educational **daily-driver capable** operating system that demonstrates modern OS concepts from bootloader to GUI applications. Initially a hobby project, it has evolved into a feature-rich OS with multitasking, virtual memory, filesystem support, and a complete desktop environment.
 
-**This is NOT a production OS** - it's a learning project that demonstrates:
-- Custom x86_64 kernel
-- Hardware drivers (keyboard, mouse, timer, framebuffer)
-- Window manager with GUI
+**Key Highlights:**
+- Custom x86_64 kernel with virtual memory management
+- Full multitasking with preemptive scheduler
+- Real filesystem support (FAT32 via ATA disk driver)
+- Hardware drivers (storage, keyboard, mouse, timer, graphics)
+- Complete GUI desktop environment with window manager
+- Working terminal with real commands
 - Built-in applications
 
 ## ✨ Features
 
-### Kernel
+### Kernel (v2.0)
 - **Bootloader**: Limine bootloader for modern UEFI/BIOS support
 - **Architecture**: x86_64 long mode
+- **Memory Management**: 
+  - Physical memory manager (PMM) with bitmap allocator
+  - Virtual memory manager (VMM) with 4-level paging
+  - Improved heap allocator with proper kfree() and block merging
+- **Process Management**:
+  - Process Control Blocks (PCB) with CPU context
+  - Round-robin scheduler with preemptive multitasking
+  - Context switching (assembly implementation)
+- **System Calls**: 11 syscalls (exit, fork, read, write, open, close, wait, exec, getpid, sleep, yield)
+- **Logging**: Kernel logging system with multiple log levels
 - **GDT/IDT**: Proper segment and interrupt descriptor tables
-- **Memory Management**: Simple heap allocator
-- **Interrupts**: PIC-based interrupt handling
+- **Interrupts**: PIC-based interrupt handling with scheduler integration
 
 ### Drivers
 - **Framebuffer**: Direct framebuffer graphics with 8x8 bitmap font
 - **Keyboard**: PS/2 keyboard driver with scancode translation
 - **Mouse**: PS/2 mouse driver with button and position tracking
-- **Timer**: PIT-based timer at 1000 Hz
+- **Timer**: PIT-based timer at 1000 Hz with scheduler integration
+- **Storage**: ATA disk driver (PIO mode) for reading/writing sectors
+- **Filesystem**: FAT32 driver with read support and directory listing
+
+### Filesystem & VFS
+- **Virtual File System (VFS)**: Unified file operations interface
+- **FAT32 Support**: Read files and list directories
+- **File Operations**: open, close, read, exists, file_size
+- **Directory Operations**: List directory contents with metadata
 
 ### GUI Desktop Environment
 - **Top Bar**: Launcher button, clock display, and status icons
@@ -37,10 +57,17 @@ BasicOS is an educational operating system that demonstrates the full OS stack f
 - **Mouse Cursor**: Software-rendered cursor
 
 ### Built-in Applications
-1. **Terminal**: Simple command-line interface with text output
+1. **Terminal**: Full-featured command-line interface with real commands:
+   - `help` - Show available commands
+   - `ls` - List directory contents
+   - `cat` - Display file contents
+   - `echo` - Echo text
+   - `clear` - Clear screen
+   - `pwd` - Print working directory
+   - `uname` - System information
 2. **Text Editor**: Basic text editing with keyboard input
 3. **Settings**: UI for toggling color schemes
-4. **File Manager**: Displays a fake file listing
+4. **File Manager**: Directory browser (filesystem integrated)
 5. **Demo Game**: Placeholder for game (Fireboy & Watergirl themed)
 
 ## 🔧 Building BasicOS
@@ -164,20 +191,28 @@ basicOS/
 │   ├── main.c          # Kernel main function
 │   ├── gdt.c           # Global Descriptor Table
 │   ├── idt.c           # Interrupt Descriptor Table
-│   ├── memory.c        # Memory management
-│   └── isr.c           # Interrupt service routines
+│   ├── memory.c        # Heap memory management
+│   ├── paging.c        # Virtual memory (VMM/PMM)
+│   ├── process.c       # Process management
+│   ├── syscall.c       # System call interface
+│   ├── vfs.c           # Virtual File System
+│   ├── log.c           # Kernel logging
+│   ├── isr.c           # Interrupt service routines
+│   └── context_switch.asm  # Context switching
 ├── drivers/            # Hardware drivers
 │   ├── include/        # Driver headers
 │   ├── framebuffer.c   # Graphics driver
 │   ├── keyboard.c      # Keyboard driver
 │   ├── mouse.c         # Mouse driver
-│   ├── timer.c         # Timer driver
-│   └── pic.c           # Interrupt controller
+│   ├── timer.c         # Timer driver with scheduler
+│   ├── pic.c           # Interrupt controller
+│   ├── ata.c           # ATA disk driver
+│   └── fat32.c         # FAT32 filesystem driver
 ├── gui/                # GUI framework
 │   ├── include/        # GUI headers
 │   └── gui.c           # Window manager
 ├── apps/               # Built-in applications
-│   ├── terminal.c      # Terminal app
+│   ├── terminal.c      # Terminal app with commands
 │   ├── editor.c        # Text editor app
 │   ├── settings.c      # Settings app
 │   ├── files.c         # File manager app
@@ -200,10 +235,14 @@ basicOS/
 4. **Initialization**:
    - Initialize GDT (segment descriptors)
    - Initialize IDT (interrupt handlers)
-   - Initialize memory management
+   - Initialize memory management (heap, paging)
    - Initialize framebuffer driver
    - Initialize PIC (interrupt controller)
-   - Initialize hardware drivers (timer, keyboard, mouse)
+   - Initialize hardware drivers (timer, keyboard, mouse, ATA disk)
+   - Initialize logging system
+   - Initialize VFS and FAT32 filesystem
+   - Initialize process management and scheduler
+   - Initialize system call interface
    - Enable interrupts
    - Initialize GUI framework
 5. **Main Loop**: Update and render GUI at ~60 FPS
@@ -211,17 +250,33 @@ basicOS/
 ### Memory Layout
 
 - **Kernel**: Loaded at `0xFFFFFFFF80100000` (higher half)
-- **Heap**: 16 MB simple bump allocator
-- **Stack**: 16 KB per CPU
+- **Heap**: 16 MB allocator with proper free support
+- **Paging**: 4-level page tables (PML4)
+- **Stack**: 8 KB per process
 - **Framebuffer**: Directly mapped by Limine
 
 ### Interrupt Handling
 
 - **ISRs 0-31**: CPU exceptions (divide by zero, page fault, etc.)
-- **IRQ 0 (INT 32)**: Timer interrupt (1000 Hz)
+- **IRQ 0 (INT 32)**: Timer interrupt (1000 Hz, scheduler tick)
 - **IRQ 1 (INT 33)**: Keyboard interrupt
 - **IRQ 12 (INT 44)**: Mouse interrupt
 - **PIC**: Remapped to avoid conflicts with CPU exceptions
+
+### Process Management
+
+- **PCB Structure**: Stores process state, CPU context, page tables
+- **Scheduler**: Round-robin preemptive scheduler
+- **Context Switching**: Assembly-level CPU state save/restore
+- **Time Slicing**: 10ms time slices for fair CPU distribution
+
+### Filesystem Architecture
+
+- **VFS Layer**: Unified interface for file operations
+- **FAT32 Driver**: Reads boot sector, FAT entries, directories
+- **ATA Driver**: PIO mode disk I/O at sector level
+- **File Operations**: open(), read(), close(), exists(), file_size()
+- **Directory Operations**: list_directory() with metadata
 
 ### GUI Architecture
 
@@ -251,13 +306,27 @@ qemu-system-x86_64 -cdrom build/basicOS.iso -m 256M \
 
 ### Known Limitations
 
-- **No File System**: No persistent storage or file loading
-- **No Networking**: No network stack or drivers
-- **No SMP**: Single-core only
-- **No Virtual Memory**: Direct physical memory access
-- **No Process Scheduling**: No multitasking or processes
-- **Simple Memory**: Bump allocator with no free()
-- **Limited Input**: Basic PS/2 keyboard and mouse only
+- **Write Support**: FAT32 write operations not yet implemented
+- **Networking**: No network stack or drivers (planned)
+- **SMP**: Single-core only (multi-core support planned)
+- **User/Kernel Separation**: No privilege separation yet
+- **Limited Drivers**: Basic PS/2 input, ATA disk only
+- **GUI**: Software rendering only, no GPU acceleration
+- **File Creation**: Cannot create new files yet
+- **IPC**: Inter-process communication not implemented
+
+### Implemented Features (v2.0)
+
+✅ Virtual memory management with paging  
+✅ Process management with scheduler  
+✅ System call interface  
+✅ FAT32 filesystem (read support)  
+✅ ATA disk driver  
+✅ Kernel logging system  
+✅ Real terminal with commands  
+✅ File operations (open, read, close)  
+✅ Directory listing  
+✅ Memory allocator with free support  
 
 ## 📚 Resources
 
