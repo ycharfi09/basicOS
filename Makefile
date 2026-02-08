@@ -95,7 +95,8 @@ $(ISO_FILE): $(KERNEL_BIN) download-limine $(LIMINE_CFG)
 	@cp $(KERNEL_BIN) $(BUILD_DIR)/iso_root/
 	@mkdir -p $(BUILD_DIR)/iso_root/boot
 	@cp $(LIMINE_CFG) $(BUILD_DIR)/iso_root/boot/
-	@cp $(LIMINE_DIR)/limine-bios.sys $(BUILD_DIR)/iso_root/boot/limine.sys
+	@cp $(LIMINE_DIR)/limine-bios.sys $(BUILD_DIR)/iso_root/boot/limine-bios.sys
+	@cp $(LIMINE_DIR)/limine-bios.sys $(BUILD_DIR)/iso_root/limine-bios.sys
 	@cp $(LIMINE_DIR)/limine-bios-cd.bin $(BUILD_DIR)/iso_root/boot/limine-cd.bin
 	@cp $(LIMINE_DIR)/limine-uefi-cd.bin $(BUILD_DIR)/iso_root/boot/limine-cd-efi.bin
 	@mkdir -p $(BUILD_DIR)/iso_root/EFI/BOOT
