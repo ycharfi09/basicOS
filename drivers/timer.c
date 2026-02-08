@@ -15,9 +15,15 @@ static inline void outb(uint16_t port, uint8_t val) {
 /* Timer ticks */
 static volatile uint64_t timer_ticks = 0;
 
+/* Forward declaration for scheduler */
+extern void scheduler_tick(void);
+
 /* Timer interrupt handler (called from IRQ0) */
 void timer_interrupt_handler(void) {
     timer_ticks++;
+    
+    /* Call scheduler on every tick */
+    scheduler_tick();
 }
 
 /* Initialize timer */

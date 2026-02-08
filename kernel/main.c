@@ -3,11 +3,16 @@
 #include "memory.h"
 #include "gdt.h"
 #include "idt.h"
+#include "log.h"
+#include "process.h"
+#include "syscall.h"
+#include "vfs.h"
 #include "../drivers/include/framebuffer.h"
 #include "../drivers/include/pic.h"
 #include "../drivers/include/timer.h"
 #include "../drivers/include/keyboard.h"
 #include "../drivers/include/mouse.h"
+#include "../drivers/include/ata.h"
 #include <stdint.h>
 
 /* Limine requests */
@@ -76,6 +81,31 @@ void kernel_main(void) {
 
     /* Initialize mouse */
     mouse_init();
+    
+    /* Initialize logging system */
+    log_init();
+    LOG_INFO_MSG("Kernel", "BasicOS v2.0 - Daily Driver Edition");
+    
+    /* Initialize ATA disk driver */
+    ata_init();
+    if (ata_drive_present()) {
+        LOG_INFO_MSG("Storage", "ATA disk detected");
+    } else {
+        LOG_WARN_MSG("Storage", "No ATA disk found");
+    }
+    
+    /* Initialize VFS */
+    vfs_init();
+    LOG_INFO_MSG("VFS", "Virtual File System initialized");
+    
+    /* Initialize process management */
+    process_init();
+    scheduler_init();
+    LOG_INFO_MSG("Scheduler", "Process scheduler initialized");
+    
+    /* Initialize system calls */
+    syscall_init();
+    LOG_INFO_MSG("Syscall", "System call interface initialized");
 
     /* Enable interrupts */
     __asm__ volatile ("sti");
@@ -84,7 +114,7 @@ void kernel_main(void) {
     fb_clear(RGB(20, 30, 50));
 
     /* Draw welcome message */
-    fb_draw_string(10, 10, "BasicOS v1.0", COLOR_WHITE);
+    fb_draw_string(10, 10, "BasicOS v2.0 - Daily Driver Edition", COLOR_WHITE);
     fb_draw_string(10, 30, "Booting...", COLOR_WHITE);
 
     /* Wait a bit for effect */
