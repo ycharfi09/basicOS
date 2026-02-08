@@ -90,15 +90,27 @@ void mouse_init(void) {
 void mouse_interrupt_handler(void) {
     uint8_t data = inb(MOUSE_DATA_PORT);
     
+    /* Verify first byte alignment - bit 3 must be set in byte 0 */
+    if (mouse_cycle == 0 && !(data & 0x08)) {
+        return;  /* Discard and resynchronize */
+    }
+
     mouse_bytes[mouse_cycle] = data;
     mouse_cycle++;
 
     if (mouse_cycle == 3) {
         mouse_cycle = 0;
 
-        /* Parse mouse packet */
-        int8_t delta_x = mouse_bytes[1];
-        int8_t delta_y = mouse_bytes[2];
+        /* Discard packet if overflow bits are set */
+        if (mouse_bytes[0] & 0xC0) {
+            return;
+        }
+
+        /* Parse mouse packet with sign extension from status byte */
+        int delta_x = mouse_bytes[1];
+        int delta_y = mouse_bytes[2];
+        if (mouse_bytes[0] & 0x10) delta_x -= 256;
+        if (mouse_bytes[0] & 0x20) delta_y -= 256;
 
         /* Update mouse state */
         current_mouse_state.x += delta_x;

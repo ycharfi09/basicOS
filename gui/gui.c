@@ -307,4 +307,7 @@ void gui_render(void) {
         fb_putpixel(mouse.x, mouse.y + i, COLOR_WHITE);
         fb_putpixel(mouse.x + i / 2, mouse.y + i, COLOR_WHITE);
     }
+
+    /* Swap back buffer to screen */
+    fb_swap();
 }
