@@ -35,6 +35,7 @@ static volatile struct limine_hhdm_request hhdm_request = {
 };
 
 /* Limine base revision - required for protocol version checking */
+/* Magic numbers represent: {protocol_magic_1, protocol_magic_2, protocol_version} */
 __attribute__((used, section(".requests")))
 static volatile uint64_t limine_base_revision[3] = {
     0xf9562b2d5c95a6c8, 0x6a7b384944536bdc, 0
@@ -42,6 +43,9 @@ static volatile uint64_t limine_base_revision[3] = {
 
 /* Global framebuffer pointer */
 struct limine_framebuffer *fb = NULL;
+
+/* Serial port constants for debugging */
+#define COM1_PORT 0x3F8
 
 /* Simple port I/O functions */
 static inline void __outb(uint16_t port, uint8_t val) {
@@ -56,10 +60,9 @@ static inline uint8_t __inb(uint16_t port) {
 
 /* Simple serial port output for debugging */
 static void serial_write_string(const char *str) {
-    const uint16_t COM1 = 0x3F8;
     while (*str) {
-        while ((__inb(COM1 + 5) & 0x20) == 0);
-        __outb(COM1, *str++);
+        while ((__inb(COM1_PORT + 5) & 0x20) == 0);
+        __outb(COM1_PORT, *str++);
     }
 }
 
