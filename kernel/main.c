@@ -15,24 +15,56 @@
 #include "../drivers/include/ata.h"
 #include <stdint.h>
 
-/* Limine requests */
+/* Limine requests - marked as used to prevent compiler optimization */
+__attribute__((used, section(".requests")))
 static volatile struct limine_framebuffer_request framebuffer_request = {
     .id = {LIMINE_COMMON_MAGIC, 0x9d5827dcd881dd75, 0xa3148604f6fab11b},
     .revision = 0
 };
 
+__attribute__((used, section(".requests")))
 static volatile struct limine_memmap_request memmap_request = {
     .id = {LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62},
     .revision = 0
 };
 
+__attribute__((used, section(".requests")))
 static volatile struct limine_hhdm_request hhdm_request = {
     .id = {LIMINE_COMMON_MAGIC, 0x48dcf1cb8ad2b852, 0x63984e959a98244b},
     .revision = 0
 };
 
+/* Limine base revision - required for protocol version checking */
+/* Magic numbers represent: {protocol_magic_1, protocol_magic_2, protocol_version} */
+__attribute__((used, section(".requests")))
+static volatile uint64_t limine_base_revision[3] = {
+    0xf9562b2d5c95a6c8, 0x6a7b384944536bdc, 0
+};
+
 /* Global framebuffer pointer */
 struct limine_framebuffer *fb = NULL;
+
+/* Serial port constants for debugging */
+#define COM1_PORT 0x3F8
+
+/* Simple port I/O functions */
+static inline void __outb(uint16_t port, uint8_t val) {
+    __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
+}
+
+static inline uint8_t __inb(uint16_t port) {
+    uint8_t ret;
+    __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    return ret;
+}
+
+/* Simple serial port output for debugging */
+static void serial_write_string(const char *str) {
+    while (*str) {
+        while ((__inb(COM1_PORT + 5) & 0x20) == 0);
+        __outb(COM1_PORT, *str++);
+    }
+}
 
 /* Halt the CPU */
 static void halt(void) {
@@ -50,17 +82,24 @@ void kernel_panic(const char *message) {
 
 /* Main kernel entry point */
 void kernel_main(void) {
+    serial_write_string("BasicOS: Kernel starting...\n");
+    
     /* Initialize GDT */
     gdt_init();
+    serial_write_string("BasicOS: GDT initialized\n");
 
     /* Initialize IDT */
     idt_init();
+    serial_write_string("BasicOS: IDT initialized\n");
 
     /* Get framebuffer from Limine */
+    serial_write_string("BasicOS: Checking framebuffer...\n");
     if (framebuffer_request.response == NULL || 
         framebuffer_request.response->framebuffer_count < 1) {
+        serial_write_string("BasicOS: ERROR - No framebuffer from bootloader!\n");
         halt();
     }
+    serial_write_string("BasicOS: Framebuffer OK\n");
 
     fb = framebuffer_request.response->framebuffers[0];
 
