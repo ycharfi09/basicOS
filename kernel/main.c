@@ -3,6 +3,11 @@
 #include "memory.h"
 #include "gdt.h"
 #include "idt.h"
+#include "../drivers/include/framebuffer.h"
+#include "../drivers/include/pic.h"
+#include "../drivers/include/timer.h"
+#include "../drivers/include/keyboard.h"
+#include "../drivers/include/mouse.h"
 #include <stdint.h>
 
 /* Limine requests */
@@ -57,14 +62,44 @@ void kernel_main(void) {
     /* Initialize memory management */
     memory_init();
 
-    /* Initialize drivers */
-    // Will be implemented later
+    /* Initialize framebuffer driver */
+    fb_init(fb->address, fb->width, fb->height, fb->pitch, fb->bpp);
+
+    /* Initialize PIC */
+    pic_init();
+
+    /* Initialize timer (1000 Hz = 1ms per tick) */
+    timer_init(1000);
+
+    /* Initialize keyboard */
+    keyboard_init();
+
+    /* Initialize mouse */
+    mouse_init();
+
+    /* Enable interrupts */
+    __asm__ volatile ("sti");
+
+    /* Clear screen to dark blue */
+    fb_clear(RGB(20, 30, 50));
+
+    /* Draw welcome message */
+    fb_draw_string(10, 10, "BasicOS v1.0", COLOR_WHITE);
+    fb_draw_string(10, 30, "Booting...", COLOR_WHITE);
+
+    /* Wait a bit for effect */
+    timer_wait(1000);
 
     /* Initialize GUI */
-    // Will be implemented later
+    extern void gui_init(void);
+    extern void gui_update(void);
+    extern void gui_render(void);
+    gui_init();
 
     /* Main loop */
     while (1) {
-        __asm__ volatile ("hlt");
+        gui_update();
+        gui_render();
+        timer_wait(16);  /* ~60 FPS */
     }
 }
