@@ -29,10 +29,6 @@ static inline void io_wait(void) {
 
 /* Initialize PIC */
 void pic_init(void) {
-    /* Save masks */
-    uint8_t mask1 = inb(PIC1_DATA);
-    uint8_t mask2 = inb(PIC2_DATA);
-
     /* Start initialization sequence */
     outb(PIC1_COMMAND, ICW1_INIT);
     io_wait();
@@ -58,9 +54,10 @@ void pic_init(void) {
     outb(PIC2_DATA, ICW4_8086);
     io_wait();
 
-    /* Restore masks */
-    outb(PIC1_DATA, mask1);
-    outb(PIC2_DATA, mask2);
+    /* Enable needed interrupts: timer (IRQ0), keyboard (IRQ1), cascade (IRQ2) */
+    outb(PIC1_DATA, 0xF8);
+    /* Enable needed interrupts: mouse (IRQ12 = slave IRQ4) */
+    outb(PIC2_DATA, 0xEF);
 }
 
 /* Send End Of Interrupt */
