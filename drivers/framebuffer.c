@@ -1,9 +1,11 @@
 #include "framebuffer.h"
+#include "../../kernel/include/memory.h"
 #include <stdint.h>
 #include <stddef.h>
 
 /* Framebuffer state */
 static uint32_t *fb_addr = NULL;
+static uint32_t *back_buffer = NULL;
 static uint32_t fb_width = 0;
 static uint32_t fb_height = 0;
 static uint32_t fb_pitch = 0;
@@ -93,6 +95,9 @@ void fb_init(void *addr, uint32_t width, uint32_t height, uint32_t pitch, uint16
     fb_height = height;
     fb_pitch = pitch;
     fb_bpp = bpp;
+
+    /* Allocate back buffer for double buffering */
+    back_buffer = (uint32_t *)kmalloc(height * pitch);
 }
 
 /* Clear screen */
@@ -107,7 +112,15 @@ void fb_clear(uint32_t color) {
 /* Put a pixel */
 void fb_putpixel(uint32_t x, uint32_t y, uint32_t color) {
     if (x >= fb_width || y >= fb_height) return;
-    fb_addr[y * (fb_pitch / 4) + x] = color;
+    uint32_t *target = back_buffer ? back_buffer : fb_addr;
+    target[y * (fb_pitch / 4) + x] = color;
+}
+
+/* Swap back buffer to framebuffer (double buffering) */
+void fb_swap(void) {
+    if (back_buffer) {
+        memcpy(fb_addr, back_buffer, fb_height * fb_pitch);
+    }
 }
 
 /* Draw a filled rectangle */
